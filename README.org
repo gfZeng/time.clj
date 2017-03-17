@@ -1,0 +1,63 @@
+
+time util for Clojure(Script)
+
+* Installation
+  #+begin_src clojure
+  [time "0.1.0"]
+  (:require [time.core :as t])
+  #+end_src
+
+* Usage
+**  format
+   #+begin_src clojure
+     ;; format use default time zone
+     (format "yyyyMMdd HH:mm:ss" #inst "2017-03-17T11:55:55")
+
+     ;; format use sepcify time zone
+     (format "yyyyMMdd HH:mm:ss"
+             (proxy-date #inst "2017-03-17T11:55:55"
+                         :time-zone (time-zone "GMT+00:00")))
+   #+end_src
+
+** begin-period
+   #+begin_src clojure
+   (begin-period [2 :month] #inst "2017-03-17T11:55:55") 
+   ;;=> #inst "2017-03-01T00:00:00.000+00:00"
+   #+end_src
+
+** period-seq
+   
+   #+begin_src clojure
+     ;; sunday as first day of week
+     (def week-seq (period-seq :week #inst "2017-03-17:12:33:33"))
+
+     ;; monday as first day of week & use time-zone offset 00:00
+     (def week-seq (period-seq
+                    :week
+                    (proxy-date #inst "2017-03-17:12:33:33"
+                                :first-day-of-week :monday
+                                :time-zone (time-zone "GTM+00:00"))))
+
+     ;; other periods: `:year`, `:month`, `:day`, `:hour`, `:minute`, `:second`
+     ;; all periods support pair format exclude week, eg. `[1 :year]` = `:year`
+     (def quarter-seq (period-seq
+                       [15 :minute]
+                       (proxy-date #inst "2017-03-17:12:33:33"
+                                   :time-zone (time-zone "GTM+00:00"))))
+     #+end_src
+
+** subtract-period
+   It's a low level api, if you want a `double-week-seq`:
+   #+begin_src clojure
+     (def double-week-seq
+       (iterate #(subtract-period % [14 :day]) (begin-period :week date)))
+   #+end_src
+
+
+
+
+
+
+
+
+

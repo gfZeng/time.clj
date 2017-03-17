@@ -36,19 +36,19 @@ time util for Clojure(Script)
                     :week
                     (proxy-date #inst "2017-03-17:12:33:33"
                                 :first-day-of-week :monday
-                                :time-zone (time-zone "GTM+00:00"))))
+                                :time-zone (time-zone "GMT+00:00"))))
 
      ;; other periods: `:year`, `:month`, `:day`, `:hour`, `:minute`, `:second`
      ;; all periods support pair format exclude week, eg. `[1 :year]` = `:year`
      (def quarter-seq (period-seq
                        [15 :minute]
                        (proxy-date #inst "2017-03-17:12:33:33"
-                                   :time-zone (time-zone "GTM+00:00"))))
+                                   :time-zone (time-zone "GMT+00:00"))))
      #+end_src
 
 ** add-period
    It's a low level api, if you want a `double-week-seq`:
    #+begin_src clojure
      (def double-week-seq
-       (iterate #(add-period % [14 :day]) (begin-period :week date)))
+       (iterate #(add-period % [2 :week]) (begin-period :week date)))
    #+end_src

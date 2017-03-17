@@ -21,12 +21,12 @@ time util for Clojure(Script)
 
 ** begin-period
    #+begin_src clojure
-   (begin-period [2 :month] #inst "2017-03-17T11:55:55") 
+   (begin-period [2 :month] #inst "2017-03-17T11:55:55")
    ;;=> #inst "2017-03-01T00:00:00.000+00:00"
    #+end_src
 
 ** period-seq
-   
+
    #+begin_src clojure
      ;; sunday as first day of week
      (def week-seq (period-seq :week #inst "2017-03-17:12:33:33"))
@@ -46,18 +46,9 @@ time util for Clojure(Script)
                                    :time-zone (time-zone "GTM+00:00"))))
      #+end_src
 
-** subtract-period
+** add-period
    It's a low level api, if you want a `double-week-seq`:
    #+begin_src clojure
      (def double-week-seq
-       (iterate #(subtract-period % [14 :day]) (begin-period :week date)))
+       (iterate #(add-period % [14 :day]) (begin-period :week date)))
    #+end_src
-
-
-
-
-
-
-
-
-

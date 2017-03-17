@@ -233,13 +233,13 @@
          [:year :month :day :hour :minute :second])))))
 
 (defn add-period [^Date d period]
-  (if (sequential? period)
+  (if (keyword? period)
+    (add-period d [1 period])
     (let [[n period] (if (identical? (second period) :week)
                        [(* 7 (first period)) :day]
                        period)]
       (doto (Date. (.getTime d))
-        (set period (+ (get d period) n))))
-    (add-period d [1 period])))
+        (set period (+ (get d period) n))))))
 
 (defn period-seq [period d]
   (iterate #(add-period % period) (begin-period period d)))

@@ -29,12 +29,12 @@ time util for Clojure(Script)
 
    #+begin_src clojure
      ;; sunday as first day of week
-     (def week-seq (period-seq :week #inst "2017-03-17:12:33:33"))
+     (def week-seq (period-seq :week #inst "2017-03-17T12:33:33"))
 
      ;; monday as first day of week & use time-zone offset 00:00
      (def week-seq (period-seq
                     :week
-                    (proxy-date #inst "2017-03-17:12:33:33"
+                    (proxy-date #inst "2017-03-17T12:33:33"
                                 :first-day-of-week :monday
                                 :time-zone (time-zone "GMT+00:00"))))
 
@@ -42,7 +42,7 @@ time util for Clojure(Script)
      ;; all periods support pair format exclude week, eg. `[1 :year]` = `:year`
      (def quarter-seq (period-seq
                        [15 :minute]
-                       (proxy-date #inst "2017-03-17:12:33:33"
+                       (proxy-date #inst "2017-03-17T12:33:33"
                                    :time-zone (time-zone "GMT+00:00"))))
      #+end_src
 

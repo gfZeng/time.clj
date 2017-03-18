@@ -34,7 +34,7 @@
   (time-zone-offset [this])
   (first-day-of-week [this]))
 
-(defn proxy-date [d & {:keys [first-day-of-week time-zone]}]
+(defn date [d & {:keys [first-day-of-week time-zone]}]
   (let [offset (if time-zone
                  (time-zone-offset time-zone)
                  (time-zone-offset d))

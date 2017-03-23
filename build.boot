@@ -18,8 +18,3 @@
        :url     "https://github.com/gfZeng/time.clj"
        :scm     {:url "https://github.com/gfZeng/time.clj"}
        :license {"Eclipse Public License" "http://www.eclipse.org/legal/epl-v10.html"}})
-
-(deftask build
-  "Build and install the project locally."
-  []
-  (comp (pom) (jar) (install)))

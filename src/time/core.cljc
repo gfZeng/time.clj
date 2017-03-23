@@ -212,7 +212,7 @@
 
 (defn begin-period
   [period d]
-  (if-not (sequential? period)
+  (if (keyword? period)
     (begin-period [1 period] d)
     (let [[n period] period
           begin      (date-1970 d)]

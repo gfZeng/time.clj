@@ -30,47 +30,11 @@
   String
   (as-num [s] (str->num s)))
 
-(defprotocol IOffset
-  (time-zone-offset [this])
-  (first-day-of-week [this]))
-
-(defn date [d & {:keys [first-day-of-week time-zone]}]
-  (let [offset (if time-zone
-                 (time-zone-offset time-zone)
-                 (time-zone-offset d))
-        fdow   (if first-day-of-week
-                 ({:sunday    0
-                   :monday    1
-                   :tuesday   2
-                   :wednesday 3
-                   :thursday  4
-                   :friday    5
-                   :saturday  6}
-                  first-day-of-week
-                  first-day-of-week)
-                 (time.core/first-day-of-week d))]
-    #?(:clj
-       (proxy [Date time.core.IOffset] [(.getTime d)]
-         (time_zone_offset  [] offset)
-         (first_day_of_week [] fdow))
-
-       :cljs
-       (doto (js/Date. (.getTime d))
-         (aset (munge "time-zone-offset") offset)
-         (aset (munge "first-day-of-week") fdow)))))
-
-(extend-protocol IOffset
-  Number
-  (time-zone-offset [this] this)
-
-  String
-  (time-zone-offset [this]
-    (let [[_ op hours mins] (re-find #"GMT([-+])?(\d+)?(?::(\d+))?" this)
-
-          op     ({"+" + "-" -} op +)
-          millis (+ (* 3600 1000 (as-num hours))
-                    (* 60000 (as-num mins)))]
-      (op millis))))
+(defprotocol IDate
+  (time-zone-offset  [this])
+  (first-day-of-week [this])
+  (as-date [this offset fdow]
+    "offset = (time-zone-offset this) & fdow = (first-day-of-week this)"))
 
 (defn set [d field val]
   (case field
@@ -102,17 +66,7 @@
 
 #?(:clj
    (do
-     (extend-protocol IOffset
-       Date
-       (time-zone-offset [this]
-         (if (instance? time.core.IOffset this)
-           (.time_zone_offset ^time.core.IOffset this)
-           (* -60000 (.getTimezoneOffset this))))
-       (first-day-of-week [this]
-         (if (instance? time.core.IOffset this)
-           (.first_day_of_week ^time.core.IOffset this)
-           0))
-
+     (extend-protocol IDate
        TimeZone
        (time-zone-offset [this]
          (.getRawOffset this)))
@@ -143,19 +97,11 @@
 
    :cljs
    (do
-     (extend-protocol IOffset
-       Date
-       (time-zone-offset [this]
-         (or (.-time-zone-offset this)
-             (* -60000 (.getTimezoneOffset this))))
-       (first-day-of-week [this]
-         (or (.-first-day-of-week this) 0)))
-
      (defn time-zone
        ([]    (time-zone (js/Date.)))
        ([fmt] (let [millis (time-zone-offset fmt)]
                 (reify
-                  IOffset
+                  IDate
                   (time-zone-offset [this] millis)
                   IHash
                   (-hash [this] millis)
@@ -173,7 +119,7 @@
           ([pattern]
            (formatter (time-zone) pattern))
           ([tz pattern]
-           (assert (satisfies? IOffset tz))
+           (assert (satisfies? IDate tz))
            (let [pts (re-seq #"'[^']+'|y+|M+|d+|H+|m+|s+|S+" pattern)
                  ss  (str/split pattern #"'[^']+'|y+|M+|d+|H+|m+|s+|S+")]
              [tz
@@ -202,6 +148,59 @@
               (interleave ss)
               (apply str))))
      ))
+
+(extend-protocol IDate
+  Number
+  (time-zone-offset [this]
+    (time-zone-offset (time-zone)))
+  (first-day-of-week [this] 0)
+  (as-date [this offset fdow]
+    #?(:clj
+       (proxy [Date time.core.IDate] [this]
+         (time_zone_offset  [] offset)
+         (first_day_of_week [] fdow))
+
+       :cljs
+       (specify! (js/Date. this)
+         IDate
+         (time-zone-offset [this] offset)
+         (first-day-of-week [this] fdow))))
+
+  Date
+  (time-zone-offset [this]
+    (* -60000 (.getTimezoneOffset this)))
+  (first-day-of-week [this]
+    0)
+  (as-date [this offset fdow]
+    (as-date (.getTime this) offset fdow))
+
+  String
+  (time-zone-offset [this]
+    (let [[_ op hours mins] (re-find #"GMT([-+])?(\d+)?(?::(\d+))?" this)
+
+          op     ({"+" + "-" -} op +)
+          millis (+ (* 3600 1000 (as-num hours))
+                    (* 60000 (as-num mins)))]
+      (op millis))))
+
+(defn date
+  ([]  (Date.))
+  ([d & {:keys [first-day-of-week time-zone]}]
+   (let [offset (if time-zone
+                  (time-zone-offset time-zone)
+                  (time-zone-offset d))
+         fdow   (if first-day-of-week
+                  ({:sunday    0
+                    :monday    1
+                    :tuesday   2
+                    :wednesday 3
+                    :thursday  4
+                    :friday    5
+                    :saturday  6}
+                   first-day-of-week
+                   first-day-of-week)
+                  (time.core/first-day-of-week d))]
+     (as-date d offset fdow))))
 
 (defn copy [x field y]
   (set x field (get y field)))
@@ -235,7 +234,7 @@
 (defn add-period [^Date d period]
   (if (keyword? period)
     (add-period d [1 period])
-    (let [[n period] (if (identical? (second period) :week)
+    (let [[n period] (if (#?(:clj identical? :cljs keyword-identical?) (second period) :week)
                        [(* 7 (first period)) :day]
                        period)]
       (doto (Date. (.getTime d))

@@ -244,5 +244,5 @@
   (iterate #(add-period % period) (begin-period period d)))
 
 (defn now-ms []
-  #?(:clj (System/currentTimeMillis))
-  #?(:cljs (.now js/Date)))
+  #?(:clj  (System/currentTimeMillis)
+     :cljs (.now js/Date)))

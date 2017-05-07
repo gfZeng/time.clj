@@ -243,3 +243,7 @@
 
 (defn period-seq [period d]
   (iterate #(add-period % period) (begin-period period d)))
+
+(defn now []
+  #?(:clj (System/currentTimeMillis))
+  #?(:cljs (.now js/Date)))

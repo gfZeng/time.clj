@@ -1,2 +1,0 @@
-(ns time.core.spec)
-

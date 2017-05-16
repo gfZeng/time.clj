@@ -11,7 +11,7 @@
 (require '[adzerk.boot-test :refer (test)]
          '[adzerk.bootlaces :refer :all])
 
-(def +version+ "0.2.3")
+(def +version+ "0.2.4")
 
 (task-options!
  pom  {:project 'time

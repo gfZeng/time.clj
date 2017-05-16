@@ -11,6 +11,8 @@
 
 (def +version+ "0.2.4")
 
+(bootlaces! +version+)
+
 (task-options!
  pom  {:project 'time
        :version +version+

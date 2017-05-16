@@ -2,8 +2,6 @@
 (set-env!
  :source-paths #{"src"}
  :dependencies '[[org.clojure/clojure    "1.9.0-alpha16" :scope "provided"]
-                 [org.clojure/test.check "0.9.0"]
-
                  [adzerk/boot-test "1.2.0"  :scope "test"]
                  [commons-lang/commons-lang "2.2" :scope "test"]
                  [adzerk/bootlaces "0.1.13" :scope "test"]])

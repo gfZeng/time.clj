@@ -28,7 +28,7 @@
   (as-num [_] 0)
   Number
   (as-num [n] n)
-  String
+  #?(:clj String :cljs string)
   (as-num [s] (str->num s)))
 
 (defprotocol IDate
@@ -195,7 +195,7 @@
   (as-date [this offset fdow]
     (as-date (.getTime this) offset fdow))
 
-  String
+  string
   (time-zone-offset [this]
     (let [[op hours mins] (re-find #"(?:GMT|Z)(?:[-+])?(\d+)?(?::(\d+))?$" this)
 
@@ -204,7 +204,7 @@
                     (* 60000 (as-num mins)))]
       (op millis))))
 
-(extend-type String
+(extend-type #?(:clj String :cljs string)
   IFormat
   (format [this ^Date d]
     (let [^SimpleDateFormat fmt (formatter (time-zone d) this)]

@@ -3,7 +3,7 @@ time util for Clojure(Script)
 
 * Installation
   #+begin_src clojure
-  [time "0.2.4"]
+  [time "0.2.5"]
   (:require [time.core :as t])
   #+end_src
 

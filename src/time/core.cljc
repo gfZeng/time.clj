@@ -195,7 +195,7 @@
   (as-date [this offset fdow]
     (as-date (.getTime this) offset fdow))
 
-  string
+  #?(:clj String :cljs string)
   (time-zone-offset [this]
     (let [[op hours mins] (re-find #"(?:GMT|Z)(?:[-+])?(\d+)?(?::(\d+))?$" this)
 

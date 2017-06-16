@@ -1,9 +1,11 @@
 (ns time.core
-  (:refer-clojure :exclude [set get format])
+  (:refer-clojure :exclude [> < >= <= == set get format])
   #?(:clj (:import [java.util Date TimeZone]
                    [java.text SimpleDateFormat]))
   (:require [clojure.string :as str]
-            [clojure.pprint :refer [cl-format]]))
+            [clojure.pprint :refer [cl-format]]
+            #?(:clj  [clojure.core :as core]
+               :cljs [cljs.core    :as core])))
 
 
 #?(:cljs
@@ -276,3 +278,18 @@
 (defn now-ms []
   #?(:clj  (System/currentTimeMillis)
      :cljs (.now js/Date)))
+
+(defn > [d1 d2]
+  (core/> (.getTime d1) (.getTime d2)))
+
+(defn < [d1 d2]
+  (core/< (.getTime d1) (.getTime d2)))
+
+(defn >= [d1 d2]
+  (core/>= (.getTime d1) (.getTime d2)))
+
+(defn <= [d1 d2]
+  (core/<= (.getTime d1) (.getTime d2)))
+
+(defn == [d1 d2]
+  (core/== (.getTime d1) (.getTime d2)))

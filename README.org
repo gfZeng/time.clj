@@ -85,3 +85,25 @@ time util for Clojure(Script)
      (def double-week-seq
        (iterate #(add-period % [-2 :week]) (begin-period :week (t/date))))
    #+end_src
+
+**  chime & lightweight cronjob support
+   #+begin_src clojure
+
+     (:require [time.chime :as chime]
+               [clojure.core.async :as a :refer [<! go-loop]])
+
+     (let [ch (-> (t/date)
+                  (t/period-seq :minute)
+                  (chime/chime-ch))]
+       (go-loop [ch]
+         ;; println at every begining of minutes
+         (when-let [p (<! ch)]
+           (println p (t/date))
+           (recur))))
+
+     (with-chime [ch (-> (t/date)
+                         (t/period-seq :minute)
+                         (chime/chime-ch))]
+       (println (t/date)))
+   #+end_src
+

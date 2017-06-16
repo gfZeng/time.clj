@@ -80,7 +80,7 @@ time util for Clojure(Script)
    #+end_src
 
 ** add-period
-   add-period is a low level api, period-seq implements vai `add-period` & `begin-period`, heare is an example of reverse traversal with `[-2 :week]` period:
+   add-period is a low level api, period-seq implements vai `add-period` & `begin-period`, here is an example of reverse traversal with `[-2 :week]` period:
    #+begin_src clojure
      (def double-week-seq
        (iterate #(add-period % [-2 :week]) (begin-period :week (t/date))))

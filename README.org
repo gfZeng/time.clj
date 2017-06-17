@@ -3,7 +3,7 @@ time util for Clojure(Script)
 
 * Installation
   #+begin_src clojure
-  [time "0.2.6"]
+  [time "0.3.0"]
   (:require [time.core :as t])
   #+end_src
 
@@ -26,40 +26,40 @@ time util for Clojure(Script)
 **  format
    #+begin_src clojure
      ;; format use default time zone
-     (t/format "yyyyMMdd HH:mm:ss" (t/date))
+     (t/format (t/date) "yyyyMMdd HH:mm:ss")
 
      (def zero-zone (t/time-zone "GMT+00:00"))
      (def d (t/date (t/date) :time-zone zero-zone))
-     (t/format "yyyyMMdd HH:mm:ss" d) ; format with zero zone
+     (t/format d "yyyyMMdd HH:mm:ss") ; format with zero zone
    #+end_src
 
-** begin-period
+** floor
    #+begin_src clojure
    ;; yyyy-MM-dd => yyyy-MM-01
-   (t/begin-period [1 :month] (t/date))
+   (t/floor (t/date) [1 :month])
 
    ;; two month as period
-   (t/begin-period [2 :month] (t/date))
+   (t/floor (t/date) [2 :month])
 
    ;; one week as period & sunday is first day (default)
-   (t/begin-period [1 :week] (t/date))
+   (t/floor (t/date) [1 :week])
 
    ;; one week as period & monday is first day
-   (t/begin-period 
-     [1 :week] 
-     (t/date current-millis :first-day-of-week :monday))
+   (t/floor 
+     (t/date current-millis :first-day-of-week :monday)
+     [1 :week])
    #+end_src
 
-** period-seq
+** floor-seq
 
    #+begin_src clojure
      ;; sunday as first day of week
      (def week-seq
-       (t/period-seq :week (t/date)))
+       (t/floor-seq :week (t/date)))
 
      ;; `[:1 week]` = `:week`
      (def week-seq
-       (t/period-seq [1 :week] (t/date)))
+       (t/floor-seq [1 :week] (t/date)))
 
      ;; use zero-zone, monday as first day, reverse traversal
      ;; last 15 week
@@ -67,23 +67,23 @@ time util for Clojure(Script)
        (->> (t/date current-millis
                     :first-day-of-week :monday
                     :time-zone zero-zone)
-            (t/period-seq [-1 :week])
+            (t/floor-seq [-1 :week])
             (take 15)))
 
      ;; other periods: `:year`, `:month`, `:day`, `:hour`, `:minute`, `:second`
      ;; all periods support pair format exclude week, eg. `[1 :year]` = `:year`
      (def quarter-seq
-       (t/period-seq
+       (t/floor-seq
         [15 :minute]
         (t/date current-millss
                 :time-zone zero-zone)))
    #+end_src
 
-** add-period
-   add-period is a low level api, period-seq implements vai `add-period` & `begin-period`, here is an example of reverse traversal with `[-2 :week]` period:
+** plus
+   plus is a low level api, floor-seq implements vai `plus` & `floor`, here is an example of reverse traversal with `[-2 :week]` period:
    #+begin_src clojure
      (def double-week-seq
-       (iterate #(add-period % [-2 :week]) (begin-period :week (t/date))))
+       (iterate #(plus % [-2 :week]) (floor (t/date) :week)))
    #+end_src
 
 **  chime & lightweight cronjob support
@@ -93,7 +93,7 @@ time util for Clojure(Script)
                [clojure.core.async :as a :refer [<! go-loop]])
 
      (let [ch (-> (t/date)
-                  (t/period-seq :minute)
+                  (t/floor-seq :minute)
                   (chime/chime-ch))]
        (go-loop [ch]
          ;; println at every begining of minutes
@@ -102,7 +102,7 @@ time util for Clojure(Script)
            (recur))))
 
      (with-chime [ch (-> (t/date)
-                         (t/period-seq :minute)
+                         (t/floor-seq :minute)
                          (chime/chime-ch))]
        (println (t/date)))
    #+end_src

@@ -14,12 +14,12 @@
         offset    (- (t/time-zone-offset time-zone)
                      (t/time-zone-offset zero-zone))]
     (is (= (t/time-zone-offset zero-zone) 0))
-    (is (= (t/format fmt (t/date ts))
+    (is (= (t/format (t/date ts) fmt)
            (t/format
-            fmt
-            (t/date (+ ts offset) :time-zone zero-zone))))))
+            (t/date (+ ts offset) :time-zone zero-zone)
+            fmt)))))
 
-(deftest test-add-period
+(deftest test-plus
   (let [d (t/date)]
     (doseq [unit {:second Calendar/SECOND
                   :minute Calendar/MINUTE
@@ -28,8 +28,8 @@
                   :week   Calendar/WEEK_OF_YEAR
                   :month  Calendar/MONTH
                   :year   Calendar/YEAR}
-            :let [d (t/begin-period (key unit) d)]]
+            :let [d (t/floor d (key unit))]]
       (doseq [i (map - (range 1 10000))]
-        (is (= (t/add-period d [i (key unit)])
+        (is (= (t/plus d [i (key unit)])
                (DateUtils/add d (val unit) i))
             [i (key unit)])))))

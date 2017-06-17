@@ -275,8 +275,10 @@
       (doto (Date. (.getTime d))
         (set period (+ (get d period) n))))))
 
-(defn floor-seq [period d]
-  (iterate #(plus % period) (floor d period)))
+(defn floor-seq
+  ([period] (floor-seq period (date)))
+  ([period d]
+   (iterate #(plus % period) (floor d period))))
 
 (defn now-ms []
   #?(:clj  (System/currentTimeMillis)

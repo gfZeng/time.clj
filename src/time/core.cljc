@@ -40,7 +40,7 @@
     "offset = (time-zone-offset this) & fdow = (first-day-of-week this)"))
 
 (defprotocol IFormat
-  (format [this ^Date   d])
+  (-format [this ^Date   d])
   (parse  [this ^String s]))
 
 (defn set [d field val]
@@ -69,7 +69,7 @@
     :time   (.getTime d)))
 
 
-#?(:cljs (declare formatter time-zone format-num))
+#?(:cljs (declare formatter time-zone -format-num))
 
 #?(:clj
    (do
@@ -103,7 +103,7 @@
 
      (extend-type SimpleDateFormat
        IFormat
-       (format [this ^Date d]
+       (-format [this ^Date d]
          (.format this d))
        (parse [this ^String s]
          ;; TODO
@@ -124,7 +124,7 @@
                   (-equiv [this other]
                     (= millis (time-zone-offset other)))))))
 
-     (defn format-num [n x]
+     (defn -format-num [n x]
        (let [base (apply * (repeat n 10))]
          (cl-format nil (str "~" n ",'0d") (mod x base))))
 
@@ -146,19 +146,19 @@
 
      (extend-type SimpleDateFormat
        IFormat
-       (format [this ^Date d]
+       (-format [this ^Date d]
          (let [d-offset (* 60000 (.getTimezoneOffset d))
                offset   (time-zone-offset (:time-zone this))
                d        (Date. (+ (.getTime d) offset d-offset))]
            (->> (map (fn [pt]
                        (case (first pt)
-                         \y (format-num (count pt) (get d :year))
-                         \M (format-num (count pt) (inc (get d :month)))
-                         \d (format-num (count pt) (get d :day))
-                         \H (format-num (count pt) (get d :hour))
-                         \m (format-num (count pt) (get d :minute))
-                         \s (format-num (count pt) (get d :second))
-                         \S (format-num (count pt) (get d :time))
+                         \y (-format-num (count pt) (get d :year))
+                         \M (-format-num (count pt) (inc (get d :month)))
+                         \d (-format-num (count pt) (get d :day))
+                         \H (-format-num (count pt) (get d :hour))
+                         \m (-format-num (count pt) (get d :minute))
+                         \s (-format-num (count pt) (get d :second))
+                         \S (-format-num (count pt) (get d :time))
                          \' (re-find #"[^']+" pt)
                          pt))
                      (:pts this))
@@ -208,12 +208,15 @@
 
 (extend-type #?(:clj String :cljs string)
   IFormat
-  (format [this ^Date d]
+  (-format [this ^Date d]
     (let [^SimpleDateFormat fmt (formatter (time-zone d) this)]
-      (format fmt d)))
+      (-format fmt d)))
   (parse [this ^String s]
     ;; TODO
     ))
+
+(defn format [d p]
+  (-format p d))
 
 (defn date
   ([]  (Date.))
@@ -241,10 +244,10 @@
   ([]   (date-1970 (time-zone)))
   ([tz] (Date. (- (time-zone-offset tz)))))
 
-(defn begin-period
-  [period d]
+(defn floor
+  [d period]
   (if (keyword? period)
-    (begin-period [1 period] d)
+    (floor d [1 period])
     (let [[n period] period
           begin      (date-1970 d)]
       (if (= period :week)
@@ -263,17 +266,17 @@
          begin
          [:year :month :day :hour :minute :second])))))
 
-(defn add-period [^Date d period]
+(defn plus [^Date d period]
   (if (keyword? period)
-    (add-period d [1 period])
+    (plus d [1 period])
     (let [[n period] (if (#?(:clj identical? :cljs keyword-identical?) (second period) :week)
                        [(* 7 (first period)) :day]
                        period)]
       (doto (Date. (.getTime d))
         (set period (+ (get d period) n))))))
 
-(defn period-seq [period d]
-  (iterate #(add-period % period) (begin-period period d)))
+(defn floor-seq [period d]
+  (iterate #(plus % period) (floor d period)))
 
 (defn now-ms []
   #?(:clj  (System/currentTimeMillis)

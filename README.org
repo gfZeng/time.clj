@@ -3,7 +3,7 @@ time util for Clojure(Script)
 
 * Installation
   #+begin_src clojure
-  [time "0.3.0"]
+  [time "0.4.0"]
   (:require [time.core :as t])
   #+end_src
 
@@ -86,7 +86,19 @@ time util for Clojure(Script)
        (iterate #(plus % [-2 :week]) (floor (t/date) :week)))
    #+end_src
 
-**  chime & lightweight cronjob support
+** parse
+   #+begin_src clojure
+     (def zero-zone (t/time-zone "GMT00:00"))
+     (t/parse  "20170704" (t/formatter zero-zone "yyyyMMdd"))
+
+     ;; use default zone
+     (t/parse  "20170704" "yyyyMMdd")
+
+     ;; more complicated
+     (t/parse  "20170704T03:33:27.333" "yyyyMMdd'T'HH:mm:ss.SSS")
+   #+end_src
+
+** chime & lightweight cronjob support
    #+begin_src clojure
 
      (:require [time.chime :as chime]

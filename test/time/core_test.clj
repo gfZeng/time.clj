@@ -33,3 +33,17 @@
         (is (= (t/plus d [i (key unit)])
                (DateUtils/add d (val unit) i))
             [i (key unit)])))))
+
+
+(deftest test-parse
+  (let [tz (t/time-zone "00:00")]
+    (is (= (t/parse  "20170704" (t/formatter tz "yyyyMMdd"))
+           #inst "2017-07-04"))
+    (is (= (t/parse  "20170704 03:33:27" (t/formatter tz "yyyyMMdd HH:mm:ss"))
+           #inst "2017-07-04T03:33:27"))
+    (is (= (t/parse  "20170704 03:33:27.333" (t/formatter tz "yyyyMMdd HH:mm:ss"))
+           #inst "2017-07-04T03:33:27"))
+    (is (= (t/parse  "20170704 03:33:27.333" (t/formatter tz "yyyyMMdd HH:mm:ss.SSS"))
+           #inst "2017-07-04T03:33:27.333"))
+    (is (= (t/parse  "20170704T03:33:27.333" (t/formatter tz "yyyyMMdd'T'HH:mm:ss.SSS"))
+           #inst "2017-07-04T03:33:27.333"))))

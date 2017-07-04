@@ -4,15 +4,15 @@
                    [java.text SimpleDateFormat]))
   (:require [clojure.string :as str]
             [clojure.pprint :refer [cl-format]]
-            #?(:clj  [clojure.core :as core]
-               :cljs [cljs.core    :as core])))
+            [clojure.core :as core]
+            #?(:cljs [goog.string :as gstr])))
 
 
 #?(:cljs
    (do (def Number js/Number)
        (def String js/String)
        (def Date   js/Date)
-       (defrecord SimpleDateFormat [time-zone pattern ss pts])))
+       (defrecord SimpleDateFormat [time-zone pattern ss pts regex])))
 
 (defn str->num
   [s]
@@ -41,13 +41,13 @@
 
 (defprotocol IFormat
   (-format [this ^Date   d])
-  (parse  [this ^String s]))
+  (-parse  [this ^String s]))
 
 (defn set [d field val]
   (case field
     :year   #?(:clj  (.setYear d (- val 1900))
                :cljs (.setFullYear d val))
-    :month  (.setMonth d val)
+    :month  (.setMonth d (dec val))
     :date   (.setDate d val)
     :day    (.setDate d val)
     :hour   (.setHours d val)
@@ -60,13 +60,32 @@
   (case field
     :year #?(:clj  (+ (.getYear d) 1900)
              :cljs (.getFullYear d))
-    :month  (.getMonth d)
+    :month  (inc (.getMonth d))
     :date   (.getDate d)
     :day    (.getDate d)
     :hour   (.getHours d)
     :minute (.getMinutes d)
     :second (.getSeconds d)
     :time   (.getTime d)))
+
+(defn date
+  ([]  (Date.))
+  ([d & {:keys [first-day-of-week time-zone]}]
+   (let [offset (if time-zone
+                  (time-zone-offset time-zone)
+                  (time-zone-offset d))
+         fdow   (if first-day-of-week
+                  ({:sunday    0
+                    :monday    1
+                    :tuesday   2
+                    :wednesday 3
+                    :thursday  4
+                    :friday    5
+                    :saturday  6}
+                   first-day-of-week
+                   first-day-of-week)
+                  (time.core/first-day-of-week d))]
+     (as-date d offset fdow))))
 
 
 #?(:cljs (declare formatter time-zone -format-num))
@@ -105,9 +124,9 @@
        IFormat
        (-format [this ^Date d]
          (.format this d))
-       (parse [this ^String s]
-         ;; TODO
-         ))
+       (-parse [this ^String s]
+         (date (.parse this s)
+               :time-zone (.getTimeZone this))))
      )
 
    :cljs
@@ -128,6 +147,13 @@
        (let [base (apply * (repeat n 10))]
          (cl-format nil (str "~" n ",'0d") (mod x base))))
 
+     (defn- ->regex-digital [s]
+       (str \(
+            (if (= (first s) \')
+              (gstr/regExpEscape (str/replace s #"^'|'$" ""))
+              (apply str (repeat (count s) "\\d")))
+            \)))
+
      (def formatter
        (memoize
         (fn formatter
@@ -135,13 +161,19 @@
            (formatter (time-zone) pattern))
           ([tz pattern]
            (assert (satisfies? IDate tz))
-           (let [pts (re-seq #"'[^']+'|y+|M+|d+|H+|m+|s+|S+" pattern)
-                 ss  (str/split pattern #"'[^']+'|y+|M+|d+|H+|m+|s+|S+")]
+           (let [pts   (re-seq #"'[^']+'|y+|M+|d+|H+|m+|s+|S+" pattern)
+                 ss    (str/split pattern #"'[^']+'|y+|M+|d+|H+|m+|s+|S+")
+                 ss    (->> (repeat "")
+                            (concat ss)
+                            (take (count pts)))
+                 regex (->> (map ->regex-digital pts)
+                            (interleave ss)
+                            (apply str)
+                            (re-pattern))]
              (map->SimpleDateFormat {:time-zone tz
                                      :pattern   pattern
-                                     :ss        (->> (repeat "")
-                                                     (concat ss)
-                                                     (take (count pts)))
+                                     :ss        ss
+                                     :regex     regex
                                      :pts       pts}))))))
 
      (extend-type SimpleDateFormat
@@ -153,7 +185,7 @@
            (->> (map (fn [pt]
                        (case (first pt)
                          \y (-format-num (count pt) (get d :year))
-                         \M (-format-num (count pt) (inc (get d :month)))
+                         \M (-format-num (count pt) (get d :month))
                          \d (-format-num (count pt) (get d :day))
                          \H (-format-num (count pt) (get d :hour))
                          \m (-format-num (count pt) (get d :minute))
@@ -164,10 +196,29 @@
                      (:pts this))
                 (interleave (:ss this))
                 (apply str))))
-       (parse [this ^String s]
-         ;; TODO
-         ))
-     ))
+       (-parse [this ^String s]
+         (let [parsed (->> (re-find (:regex this) s)
+                           (rest)
+                           (zipmap (:pts this))
+                           (reduce-kv (fn [m [k] v]
+                                        (if (= k \')
+                                          m
+                                          (assoc m k (js/parseInt v))))
+                                      {}))
+               tz     (:time-zone this)
+               ts     (-> (date)
+                          (set :time   (parsed \S 0))
+                          (set :year   (parsed \y 0))
+                          (set :month  (parsed \M 0))
+                          (set :day    (parsed \d 0))
+                          (set :hour   (parsed \H 0))
+                          (set :minute (parsed \m 0))
+                          (set :second (parsed \s 0))
+                          (.getTime))
+               ts     (+ ts
+                         (time-zone-offset (time-zone))
+                         (- (time-zone-offset tz)))]
+           (date ts :time-zone tz))))))
 
 (extend-protocol IDate
   nil
@@ -199,7 +250,8 @@
 
   #?(:clj String :cljs string)
   (time-zone-offset [this]
-    (let [[op hours mins] (re-find #"(?:GMT|Z)(?:[-+])?(\d+)?(?::(\d+))?$" this)
+    (let [[op hours mins]
+          (rest (re-find #"(?:GMT|Z)?([-+])?(\d+)?(?::(\d+))?$" this))
 
           op     ({"+" + "-" -} op +)
           millis (+ (* 3600 1000 (as-num hours))
@@ -211,31 +263,14 @@
   (-format [this ^Date d]
     (let [^SimpleDateFormat fmt (formatter (time-zone d) this)]
       (-format fmt d)))
-  (parse [this ^String s]
-    ;; TODO
-    ))
+  (-parse [this ^String s]
+    (-parse (formatter this) s)))
 
 (defn format [d p]
   (-format p d))
 
-(defn date
-  ([]  (Date.))
-  ([d & {:keys [first-day-of-week time-zone]}]
-   (let [offset (if time-zone
-                  (time-zone-offset time-zone)
-                  (time-zone-offset d))
-         fdow   (if first-day-of-week
-                  ({:sunday    0
-                    :monday    1
-                    :tuesday   2
-                    :wednesday 3
-                    :thursday  4
-                    :friday    5
-                    :saturday  6}
-                   first-day-of-week
-                   first-day-of-week)
-                  (time.core/first-day-of-week d))]
-     (as-date d offset fdow))))
+(defn parse [s fmt]
+  (-parse fmt s))
 
 (defn copy [x field y]
   (set x field (get y field)))

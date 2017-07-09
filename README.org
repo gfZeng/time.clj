@@ -1,12 +1,17 @@
 
 time util for Clojure(Script)
-
+* Features
+  - both for Clojure & ClojureScript
+  - Lightweight, use native inst (java.util.Date or js/Date), prevent date converting
+  - Extend Date in order to support `:first-day-of-week` & `:time-zone`
+  - Good performance
+  - Lightweight cronjob supports, co-working with core.async
 * Installation
   #+begin_src clojure
   [time "0.4.0"]
   (:require [time.core :as t])
   #+end_src
-
+  
 * Usage
 ** new Date
    #+begin_src clojure
@@ -107,7 +112,7 @@ time util for Clojure(Script)
      (let [ch (->> (t/date)
                    (t/floor-seq :minute)
                    (chime/chime-ch))]
-       (go-loop [ch]
+       (go-loop []
          ;; println at every begining of minutes
          (when-let [p (<! ch)]
            (println p (t/date))

@@ -232,7 +232,9 @@
     #?(:clj
        (proxy [Date time.core.IDate] [this]
          (time_zone_offset  [] offset)
-         (first_day_of_week [] fdow))
+         (first_day_of_week [] fdow)
+         (as_date [offset fdow]
+           (as-date (.getTime this) offset fdow)))
 
        :cljs
        (specify! (js/Date. this)

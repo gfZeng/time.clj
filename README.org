@@ -19,7 +19,7 @@ time util for Clojure(Script)
      (t/date)
      ;;=> #inst "2017-07-14T03:20:48.896-00:00"
      
-     (t/date (t/now-ms)
+     (t/date (t/now-ms))
      ;;=> #inst "2017-07-14T03:23:43.276-00:00"
 
 

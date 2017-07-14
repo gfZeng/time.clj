@@ -8,7 +8,7 @@ time util for Clojure(Script)
   - Lightweight cronjob supports, co-working with core.async
 * Installation
   #+begin_src clojure
-  [time "0.4.0"]
+  [time "0.4.1"]
   (:require [time.core :as t])
   #+end_src
   

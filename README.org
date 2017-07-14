@@ -7,8 +7,8 @@ time util for Clojure(Script)
   - Good performance
   - Lightweight cronjob supports, co-working with core.async
 * Installation
+  [[http://clojars.org/time/latest-version.svg]]
   #+begin_src clojure
-  [time "0.4.1"]
   (:require [time.core :as t])
   #+end_src
   
@@ -17,42 +17,74 @@ time util for Clojure(Script)
    #+begin_src clojure
      ;; current instant
      (t/date)
-     (t/date millis-secs)
+     ;;=> #inst "2017-07-14T03:20:48.896-00:00"
+     
+     (t/date (t/now-ms))
+     ;;=> #inst "2017-07-14T03:23:43.276-00:00"
+
 
      ;; copy instant
      (def d (t/date))
      (t/date d)
+     ;;=> #inst "2017-07-14T03:24:43.266-00:00"
 
      ;; copy and set time-zone
-     (d/date d :time-zone (t/time-zone "GMT+00:00"))
+     (t/date d :time-zone (t/time-zone "GMT+00:00"))
+     ;;=> #inst "2017-07-14T03:24:43.266-00:00"
+
+     (t/date d :time-zone (t/time-zone "GMT+08:00"))
+     ;;=> #inst "2017-07-14T03:24:43.266-00:00"
    #+end_src
 
-
-**  format
+** format
    #+begin_src clojure
      ;; format use default time zone
      (t/format (t/date) "yyyyMMdd HH:mm:ss")
+     ;;=> "20170714 11:27:56"
 
      (def zero-zone (t/time-zone "GMT+00:00"))
      (def d (t/date (t/date) :time-zone zero-zone))
      (t/format d "yyyyMMdd HH:mm:ss") ; format with zero zone
-   #+end_src
+     ;;=> "20170714 07:45:50"
 
+     (-> d
+         (t/date :time-zone (t/time-zone "GMT+08:00"))
+         (t/format "yyyyMMdd HH:mm:ss"))
+     ;;=> "20170714 15:45:50"
+   #+end_src
+** parse
+   #+begin_src clojure
+     (def zero-zone (t/time-zone "GMT00:00"))
+     (t/parse "20170704" (t/formatter zero-zone "yyyyMMdd"))
+     ;;=> #inst "2017-07-04T00:00:00.000-00:00"
+
+     ;; use default zone
+     (t/parse "20170704" "yyyyMMdd")
+     ;;=> #inst "2017-07-03T16:00:00.000-00:00"
+
+     ;; more complicated
+     (t/parse "20170704T03:33:27.333" "yyyyMMdd'T'HH:mm:ss.SSS")
+     ;;=> #inst "2017-07-03T19:33:27.333-00:00"
+   #+end_src
 ** floor
    #+begin_src clojure
    ;; yyyy-MM-dd => yyyy-MM-01
    (t/floor (t/date) [1 :month])
+   ;;=> #inst "2017-06-30T16:00:00.000-00:00"
 
    ;; two month as period
    (t/floor (t/date) [2 :month])
+   ;;=> #inst "2017-05-31T16:00:00.000-00:00"
 
    ;; one week as period & sunday is first day (default)
    (t/floor (t/date) [1 :week])
+   ;;=> #inst "2017-07-08T16:00:00.000-00:00"
 
    ;; one week as period & monday is first day
    (t/floor 
-     (t/date current-millis :first-day-of-week :monday)
+     (t/date (t/now-ms) :first-day-of-week :monday)
      [1 :week])
+   ;;=> #inst "2017-07-09T16:00:00.000-00:00"
    #+end_src
 
 ** floor-seq
@@ -61,6 +93,8 @@ time util for Clojure(Script)
      ;; sunday as first day of week
      (def week-seq
        (t/floor-seq :week (t/date)))
+     (take 2 week-seq)
+     ;;=> (#inst "2017-07-08T16:00:00.000-00:00" #inst "2017-07-15T16:00:00.000-00:00")
 
      ;; `[:1 week]` = `:week`
      (def week-seq
@@ -68,44 +102,36 @@ time util for Clojure(Script)
 
      ;; use zero-zone, monday as first day, reverse traversal
      ;; last 15 week
-     (def week-seq
-       (->> (t/date current-millis
+     (def week-seq2
+       (->> (t/date (t/now-ms)
                     :first-day-of-week :monday
                     :time-zone zero-zone)
             (t/floor-seq [-1 :week])
             (take 15)))
+     (take 2 week-seq2)
+     ;;=> (#inst "2017-07-10T00:00:00.000-00:00" #inst "2017-07-03T00:00:00.000-00:00")
 
      ;; other periods: `:year`, `:month`, `:day`, `:hour`, `:minute`, `:second`
      ;; all periods support pair format exclude week, eg. `[1 :year]` = `:year`
      (def quarter-seq
        (t/floor-seq
         [15 :minute]
-        (t/date current-millss
+        (t/date (t/now-ms)
                 :time-zone zero-zone)))
+     (take 2 quarter-seq)
+     ;;=> (#inst "2017-07-14T03:30:00.000-00:00" #inst "2017-07-14T03:45:00.000-00:00")
    #+end_src
 
 ** plus
    plus is a low level api, floor-seq implements vai `plus` & `floor`, here is an example of reverse traversal with `[-2 :week]` period:
    #+begin_src clojure
      (def double-week-seq
-       (iterate #(plus % [-2 :week]) (floor (t/date) :week)))
+       (iterate #(plus % [-2 :week]) (t/floor (t/date) :week)))
+     (take 2 double-week-seq)
+     ;;=> (#inst "2017-07-08T16:00:00.000-00:00" #inst "2017-06-24T16:00:00.000-00:00")
    #+end_src
-
-** parse
-   #+begin_src clojure
-     (def zero-zone (t/time-zone "GMT00:00"))
-     (t/parse  "20170704" (t/formatter zero-zone "yyyyMMdd"))
-
-     ;; use default zone
-     (t/parse  "20170704" "yyyyMMdd")
-
-     ;; more complicated
-     (t/parse  "20170704T03:33:27.333" "yyyyMMdd'T'HH:mm:ss.SSS")
-   #+end_src
-
 ** chime & lightweight cronjob support
    #+begin_src clojure
-
      (:require [time.chime :as chime]
                [clojure.core.async :as a :refer [<! go-loop]])
 

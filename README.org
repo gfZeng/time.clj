@@ -1,5 +1,5 @@
 
-time util for Clojure(Script)
+time & date util library for Clojure(Script)
 * Features
   - both for Clojure & ClojureScript
   - Lightweight, use native inst (java.util.Date or js/Date), prevent date converting

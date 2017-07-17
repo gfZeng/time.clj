@@ -3,7 +3,6 @@
   #?(:clj (:import [java.util Date TimeZone]
                    [java.text SimpleDateFormat]))
   (:require [clojure.string :as str]
-            [clojure.pprint :refer [cl-format]]
             [clojure.core :as core]
             #?(:cljs [goog.string :as gstr])))
 
@@ -144,8 +143,12 @@
                     (= millis (time-zone-offset other)))))))
 
      (defn -format-num [n x]
-       (let [base (apply * (repeat n 10))]
-         (cl-format nil (str "~" n ",'0d") (mod x base))))
+       (let [s (str x)
+             l (count s)]
+         (cond
+           (core/== l n) s
+           (core/>  l n) (.substring s (- l n))
+           (core/<  l n) (str (apply str (repeat (- n l) 0)) s))))
 
      (defn- ->regex-digital [s]
        (str \(

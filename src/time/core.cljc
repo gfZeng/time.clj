@@ -292,7 +292,7 @@
           begin      (date-1970 d)
           d-offset   (* 60000 (.getTimezoneOffset d))
           offset     (time-zone-offset d)
-          d          (Date. (+ (.getTime d) offset d-offset))]
+          d          (Date. (- (.getTime d) offset d-offset))]
       (if (= period :week)
         (doto begin
           (copy :year d)

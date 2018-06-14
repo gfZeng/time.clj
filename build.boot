@@ -1,8 +1,8 @@
 
 (set-env!
  :source-paths #{"src"}
- :dependencies '[[org.clojure/clojure    "1.9.0-alpha16" :scope "provided"]
-                 [org.clojure/core.async "0.3.443"       :scope "provided"]
+ :dependencies '[[org.clojure/clojure    "1.9.0"   :scope "provided"]
+                 [org.clojure/core.async "0.3.443" :scope "provided"]
 
                  [adzerk/boot-test          "1.2.0"  :scope "test"]
                  [commons-lang/commons-lang "2.2"    :scope "test"]

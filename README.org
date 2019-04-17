@@ -96,7 +96,7 @@ time & date util library for Clojure(Script)
      (take 2 week-seq)
      ;;=> (#inst "2017-07-08T16:00:00.000-00:00" #inst "2017-07-15T16:00:00.000-00:00")
 
-     ;; `[:1 week]` = `:week`
+     ;; `[1 :week]` = `:week`
      (def week-seq
        (t/floor-seq [1 :week] (t/date)))
 
